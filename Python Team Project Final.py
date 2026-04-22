@@ -1,0 +1,362 @@
+# ============================================
+# SECURE BROWSER SIMULATOR PROJECT
+# ============================================
+# This program simulates a simple web browser
+# with back/forward navigation and security checks.
+#
+# Think of it like a real browser (Chrome/Safari),
+# but simplified for learning data structures.
+# ============================================
+
+
+# ============================================
+# STACK CLASS (Used for navigation history)
+# ============================================
+class Stack:
+    """
+    A Stack is like a stack of plates:
+    - You add plates to the top (push)
+    - You remove plates from the top (pop)
+
+    This is called LIFO:
+    Last-In, First-Out
+    """
+
+    def __init__(self):
+        # This list stores all items in the stack
+        self.items = []
+
+    def push(self, item):
+        # Add item to the top of the stack
+        # Example: visiting a new page adds it to history
+        self.items.append(item)
+
+    def pop(self):
+        # Remove the most recent item (top of stack)
+        # If empty, return None instead of crashing
+        if not self.is_empty():
+            return self.items.pop()
+        return None
+
+    def is_empty(self):
+        # Check if stack has no items
+        return len(self.items) == 0
+
+    def __str__(self):
+        # How the stack prints (for history display)
+        return str(self.items)
+
+
+# ============================================
+# SECURE BROWSER SIMULATOR
+# ============================================
+class SecureBrowserSimulator:
+    def __init__(self):
+
+        # Back stack = pages you came FROM
+        self.back_stack = Stack()
+
+        # Forward stack = pages you can go forward TO
+        self.forward_stack = Stack()
+
+        # Current page you're on
+        self.current_page = None
+
+        # Stores all security alerts
+        self.security_alerts = []
+
+        # ========================================
+        # MALICIOUS DOMAINS (CUSTOMIZED)
+        # ========================================
+        self.malicious_domains = {
+
+            # Story: fake "free avatar movie leak"
+            # People think it's real but it's a trap
+            "freeavatarm0vie",
+
+            # Story: elders may click "free iphone"
+            # thinking it's real and get scammed
+            "freeiph0ne",
+
+            # Story: we all try watching free movies
+            # but these sites are often dangerous
+            "freem0vies",
+
+            # Story: fake MA DMV toll scam texts
+            # looks real but steals your info
+            "MADMVT011",
+        }
+
+        # ========================================
+        # MALICIOUS KEYWORDS (SIMPLIFIED)
+        # ========================================
+        self.malicious_keywords = {
+
+            # These are common scam bait words
+            "free",
+            "m0vies",
+            "iph0ne",
+            "t011",
+        }
+
+
+    # ============================================
+    # EXTRACT DOMAIN FROM URL
+    # ============================================
+    def _extract_domain(self, url):
+        """
+        Example:
+        https://google.com/page → google.com
+
+        We remove:
+        - https://
+        - everything after /
+        """
+
+        domain = url
+
+        if "://" in domain:
+            domain = domain.split("://", 1)[1]
+
+        domain = domain.split("/", 1)[0]
+
+        return domain
+
+
+    # ============================================
+    # CHECK IF URL IS MALICIOUS
+    # ============================================
+    def _is_malicious(self, url):
+        """
+        We check 2 things:
+        1. Is the domain known as malicious?
+        2. Does the URL contain suspicious keywords?
+        """
+
+        domain = self._extract_domain(url)
+
+        # Check domain list
+        if domain in self.malicious_domains:
+            return True
+
+        # Check keywords
+        url_lower = url.lower()
+        for keyword in self.malicious_keywords:
+            if keyword in url_lower:
+                return True
+
+        return False
+
+
+    # ============================================
+    # VISIT A PAGE
+    # ============================================
+    def visit(self, url):
+        """
+        Visiting a page works like this:
+
+        1. Save current page to back stack
+        2. Set new page as current
+        3. Clear forward history
+        4. Check for security threats
+        """
+
+        # Save current page before leaving it
+        if self.current_page is not None:
+            self.back_stack.push(self.current_page)
+
+        # Move to new page
+        self.current_page = url
+
+        # Clear forward history (like real browsers do)
+        self.forward_stack = Stack()
+
+        # Check if dangerous
+        if self._is_malicious(url):
+            alert = f"⚠️ SECURITY ALERT: Suspicious URL detected — {url}"
+            self.security_alerts.append(alert)
+            print(alert)
+
+        print(f"Visited: {url}")
+
+
+    # ============================================
+    # GO BACK
+    # ============================================
+    def back(self):
+        """
+        Going back:
+        - Move current page to forward stack
+        - Pop from back stack
+        """
+
+        if self.back_stack.is_empty():
+            print("No back history available.")
+            return
+
+        self.forward_stack.push(self.current_page)
+        self.current_page = self.back_stack.pop()
+
+        print(f"Back to: {self.current_page}")
+
+
+    # ============================================
+    # GO FORWARD
+    # ============================================
+    def forward(self):
+        """
+        Going forward:
+        - Move current page to back stack
+        - Pop from forward stack
+        """
+
+        if self.forward_stack.is_empty():
+            print("No forward history available.")
+            return
+
+        self.back_stack.push(self.current_page)
+        self.current_page = self.forward_stack.pop()
+
+        print(f"Forward to: {self.current_page}")
+
+
+    # ============================================
+    # SHOW HISTORY
+    # ============================================
+    def show_history(self):
+        """
+        Displays:
+        - Back history
+        - Current page
+        - Forward history
+        """
+
+        print(f"Back stack:    {self.back_stack}")
+        print(f"Current page:  {self.current_page}")
+        print(f"Forward stack: {self.forward_stack}")
+
+
+    # ============================================
+    # SHOW ALERTS
+    # ============================================
+    def show_alerts(self):
+        """
+        Show all detected security threats
+        """
+
+        if not self.security_alerts:
+            print("No security alerts.")
+            return
+
+        print("Security Alerts:")
+        for alert in self.security_alerts:
+            print(f"  {alert}")
+
+
+    # ============================================
+    # MAIN PROGRAM LOOP
+    # ============================================
+    def run(self):
+        """
+        This keeps the program running
+        until the user types 'exit'
+        """
+
+        print("Secure Browser Simulator")
+        print("Commands: visit <url> | back | forward | history | alerts | exit")
+        print()
+
+        while True:
+            command = input("browser> ").strip()
+
+            if not command:
+                continue
+
+            if command.startswith("visit "):
+                url = command[6:].strip()
+                if url:
+                    self.visit(url)
+                else:
+                    print("Usage: visit <url>")
+
+            elif command == "back":
+                self.back()
+
+            elif command == "forward":
+                self.forward()
+
+            elif command == "history":
+                self.show_history()
+
+            elif command == "alerts":
+                self.show_alerts()
+
+            elif command == "exit":
+                print("Thank you for using our simulator!")
+                break
+
+            else:
+                print(f"Unknown command: {command}")
+
+
+# ============================================
+# RUN PROGRAM
+# ============================================
+if __name__ == "__main__":
+    browser = SecureBrowserSimulator()
+    browser.run()
+
+
+# ============================================
+# DOCUMENTATION SECTION (FOR PRESENTATION)
+# ============================================
+
+"""
+TEAM MEMBERS AND CONTRIBUTIONS
+-Paul
+-Al
+-Nigel
+-Jayvon
+
+PROJECT OVERVIEW
+Goal:
+- To simulate a web browser with navigation (back/forward)
+- To detect potentially dangerous websites
+
+Completed:
+- Stack-based navigation system
+- Security detection using domains + keywords
+- Alert system for suspicious URLs
+
+Incomplete:
+- No real internet connection (simulation only)
+- No advanced security (AI, databases, etc.)
+
+Challenges:
+- Understanding how stacks work
+- Managing back vs forward history correctly
+
+Most Challenging:
+- Making sure navigation behaves like a real browser
+
+WHAT WE LEARNED
+- How stacks work (LIFO)
+- How browsers manage history
+- Basic cybersecurity concepts (phishing, scams)
+
+IMPROVEMENTS
+- Use machine learning for better detection
+- Add GUI (visual interface)
+
+WHEN COULD THIS FAIL?
+- If a malicious site is not in our list(like new scams)
+- If keywords are too simple(like "free" could be in safe sites)
+- If user enters unusual URLs(like IP addresses or encoded links)
+
+
+SIMPLE ANALOGY
+- Back stack = pages behind you
+- Forward stack = pages ahead of you
+- Like walking through rooms:
+  You can go back to previous rooms or forward again
+"""
